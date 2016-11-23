@@ -54,7 +54,8 @@ public class MessageCreateEvent extends MessageEvent {
 		DTNHost to = world.getNodeByAddress(this.toAddr);
 		DTNHost from = world.getNodeByAddress(this.fromAddr);
 		Message m = new Message(from, to, this.id, this.size);
-        m.setVehicleNum(from.getVehicleNum());
+		
+       // m.setVehicleNum(from.getVehicleNum());
 		m.setResponseSize(this.responseSize);
 		
 		

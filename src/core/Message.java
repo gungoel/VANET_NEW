@@ -47,7 +47,8 @@ public class Message implements Comparable<Message>, Serializable {
 	private int uniqueId;
 	/** The time this message was received */
 	private double timeReceived;
-	/** The time when this message was created */
+	/** The time when this message was created 
+	 * */
 	private double timeCreated;
 	/** Initial TTL of the message */
 	private int initTtl;
@@ -68,6 +69,7 @@ public class Message implements Comparable<Message>, Serializable {
 	// Added for VANET ACN
 
 	private String vehicleNum;
+	private String speed;
 
 	public String getVehicleNum() {
 		return vehicleNum;
@@ -106,6 +108,7 @@ public class Message implements Comparable<Message>, Serializable {
 		this.properties = null;
 		this.appID = null;
 		this.vehicleNum=from.getVehicleNum();
+		this.speed=Double.toString(from.getSpeed());
 		Message.nextUniqueId++;
 		addNodeOnPath(from);
 	}
@@ -293,7 +296,7 @@ public class Message implements Comparable<Message>, Serializable {
 		this.appID = m.appID;
 		this.signature = m.signature;
 		this.vehicleNum = m.vehicleNum;
-		
+		this.speed= m.speed;
 		if (m.properties != null) {
 			Set<String> keys = m.properties.keySet();
 			for (String key : keys) {
@@ -393,12 +396,13 @@ public class Message implements Comparable<Message>, Serializable {
 
 	public Message encryptMessage(){
 		Message encryptedM =this;
-		System.out.println("Vehcile Number before encryption "+this.getVehicleNum());
+		System.out.println("Vehcile Number before encryption "+this.vehicleNum);
 		//System.out.println("Direction "+m.getFrom().getDirection());
 		//System.out.println("");
-		encryptedM.setVehicleNum(encryptString(this.getVehicleNum()));
+		encryptedM.setVehicleNum(encryptString(this.vehicleNum));
+		encryptedM.speed=encryptString(this.speed);
 
-		System.out.println("Vehcile Number after encryption "+this.getVehicleNum());
+		System.out.println("Vehcile Number after encryption "+this.vehicleNum);
 		//encryptedM.getFrom().setDirection(encryptString(m.getDirection(),m));
 		//decryptedM.getFrom().setPath(decryptString(m.getFrom().getPath()));
 		//encryptedM.getFrom().setEncryptedSpeed(encryptString(m.getFrom().getSpeed()+""));
@@ -493,7 +497,7 @@ public class Message implements Comparable<Message>, Serializable {
 	public Message decryptMessage(Message m){
 		Message decryptedM = m;
 		System.out.println("vehicle Num in message m after delivery "+m.getVehicleNum());
-		decryptedM.setVehicleNum(decryptString(m.getVehicleNum()));
+		decryptedM.vehicleNum=decryptString(m.vehicleNum);
 		System.out.println("Vehicle Number after decryption "+decryptedM.getVehicleNum());
 		//decryptedM.getFrom().setDirection(decryptString(m.getFrom().getDirection(),m));
 		//decryptedM.getFrom().setPath(decryptString(m.getFrom().getPath()));
