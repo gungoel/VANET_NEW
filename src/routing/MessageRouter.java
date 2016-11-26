@@ -64,7 +64,7 @@ public abstract class MessageRouter {
 	public static final int DENIED_TTL = -3;
 	/** Receive return value for unspecified reason */
 	public static final int DENIED_UNSPECIFIED = -999;
-	
+	public static boolean flagAuth = false;
 	private List<MessageListener> mListeners;
 	/** The messages being transferred with msgID_hostName keys */
 	private HashMap<String, Message> incomingMessages;
@@ -289,10 +289,12 @@ public abstract class MessageRouter {
 		Message newMessage = m.replicate();
 		if(!m.verifySignature())
 		{
+			flagAuth = false;
 			System.out.println("Message sent by unknown sender. Signature verification failed.");
 			deleteMessage(m.getId(),false);		// Remove msg from queue since not authenticated
 			return -1;
 		}
+		flagAuth = true;
 		System.out.println("Message sender authenticated");
 		this.putToIncomingBuffer(newMessage, from);		//Put into msg buffer since authenticated
 		newMessage.addNodeOnPath(this.host);

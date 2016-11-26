@@ -19,6 +19,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
+import routing.MessageRouter;
 import core.ConnectionListener;
 import core.DTNHost;
 import core.Message;
@@ -270,18 +271,28 @@ public class EventLogPanel extends JPanel
 			boolean firstDelivery) {
 		if (firstDelivery) {
 			processEvent(msgDeliveredCheck, "Message delivered", from, to, m); 
+			processEvent(msgDeliveredCheck,"Message decrypted", from, to, m);
 		}
 		else if (to == m.getTo()) {
-			processEvent(msgDeliveredCheck, "Message delivered again", 
-					from, to, m);
+			processEvent(msgDeliveredCheck, "Message delivered again",from, to, m);
+			processEvent(msgDeliveredCheck, "Message decrypted",from, to, m);
 		}
 		else {
-			processEvent(msgRelayCheck, "Message relayed", from, to, m);
+			processEvent(msgRelayCheck, "Message received by node", from, to, m);
+			if(!MessageRouter.flagAuth)
+			{
+				processEvent(msgRelayCheck,"Sender not authenticated, hence message dropped", from,to,m);
+			}
+			else
+			{
+				processEvent(msgRelayCheck,"Sender authenticated and Message stored in buffer", from,to,m);
+			}
 		}
 	}
 
 	public void newMessage(Message m) {
 		processEvent(msgCreateCheck, "Message created", m.getFrom(), null, m);
+		processEvent(msgCreateCheck, "Message has been encrypted", m.getFrom(), null, m);
 	}
 	
 	public void messageTransferAborted(Message m, DTNHost from, DTNHost to) {
@@ -289,9 +300,7 @@ public class EventLogPanel extends JPanel
 	}
 	
 	public void messageTransferStarted(Message m, DTNHost from, DTNHost to) {
-		processEvent(msgTransferStartCheck,"Message relay started", from,
-				to,m);
-		
+		processEvent(msgTransferStartCheck,"Message relay started", from,to,m);
 	}
 	
 	// end of message interface implementations
