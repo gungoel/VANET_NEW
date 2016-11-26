@@ -270,11 +270,11 @@ public class EventLogPanel extends JPanel
 	public void messageTransferred(Message m, DTNHost from, DTNHost to,
 			boolean firstDelivery) {
 		if (firstDelivery) {
-			processEvent(msgDeliveredCheck, "Message delivered", from, to, m); 
+			processEvent(msgDeliveredCheck, "Message delivered.Path taken : "+m.getHops()+" Last transfered from : ", from, to, m); 
 			processEvent(msgDeliveredCheck,"Message decrypted", from, to, m);
 		}
 		else if (to == m.getTo()) {
-			processEvent(msgDeliveredCheck, "Message delivered again",from, to, m);
+			processEvent(msgDeliveredCheck, "Message delivered again .Path taken : "+m.getHops()+" Last transfered from : ",from, to, m);
 			processEvent(msgDeliveredCheck, "Message decrypted",from, to, m);
 		}
 		else {
