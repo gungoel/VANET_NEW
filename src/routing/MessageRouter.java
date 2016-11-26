@@ -10,6 +10,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import core.Application;
@@ -64,7 +65,11 @@ public abstract class MessageRouter {
 	public static final int DENIED_TTL = -3;
 	/** Receive return value for unspecified reason */
 	public static final int DENIED_UNSPECIFIED = -999;
-	public static boolean flagAuth = false;
+	
+	public static Message currentMessage = null;
+	public static Message firstMessage;
+	public static MessageRouter mr = null;
+	
 	private List<MessageListener> mListeners;
 	/** The messages being transferred with msgID_hostName keys */
 	private HashMap<String, Message> incomingMessages;
@@ -111,7 +116,7 @@ public abstract class MessageRouter {
 		else {
 			sendQueueMode = Q_MODE_RANDOM;
 		}
-		
+		mr = this;
 	}
 	
 	/**
@@ -172,6 +177,19 @@ public abstract class MessageRouter {
 	 */
 	protected Message getMessage(String id) {
 		return this.messages.get(id);
+	}
+	
+	public static Message tamperMessage(){
+		Message msg = null;
+		for(Map.Entry<String,Message> pair : mr.messages.entrySet())
+		{
+			msg = pair.getValue();
+			break;
+		}
+		firstMessage = msg;
+		msg.setVehicleNum("Message hacked");
+		mr.messages.put(msg.getId(), msg);
+		return msg;
 	}
 	
 	/**
@@ -287,15 +305,23 @@ public abstract class MessageRouter {
 	 */
 	public int receiveMessage(Message m, DTNHost from) {
 		Message newMessage = m.replicate();
-		if(!m.verifySignature())
+		if(Message.isSecure)
 		{
-			flagAuth = false;
-			System.out.println("Message sent by unknown sender. Signature verification failed.");
-			deleteMessage(m.getId(),false);		// Remove msg from queue since not authenticated
-			return -1;
+			if(!m.verifySignature())
+			{
+				m.setFlagAuth(false);
+				newMessage.setFlagAuth(false);
+				System.out.println("Message sent by unknown sender. Signature verification failed.");
+				deleteMessage(m.getId(),true);		// Remove msg from queue since not authenticated
+				return -2;
+			}
+			else
+			{
+				m.setFlagAuth(true); 
+				newMessage.setFlagAuth(true);
+				System.out.println("Message sender authenticated");
+			}
 		}
-		flagAuth = true;
-		System.out.println("Message sender authenticated");
 		this.putToIncomingBuffer(newMessage, from);		//Put into msg buffer since authenticated
 		newMessage.addNodeOnPath(this.host);
 		
@@ -402,7 +428,9 @@ public abstract class MessageRouter {
 	 */
 	protected void addToMessages(Message m, boolean newMessage) {
 		this.messages.put(m.getId(), m);
-		
+		currentMessage = m;
+		if(firstMessage==null)
+			firstMessage = m;
 		if (newMessage) {
 			for (MessageListener ml : this.mListeners) {
 				ml.newMessage(m);
@@ -463,11 +491,15 @@ public abstract class MessageRouter {
 	 */
 	public void deleteMessage(String id, boolean drop) {
 		Message removed = removeFromMessages(id); 
-		if (removed == null) throw new SimError("no message for id " +
-				id + " to remove at " + this.host);
-		
-		for (MessageListener ml : this.mListeners) {
-			ml.messageDeleted(removed, this.host, drop);
+		if (removed == null) 
+		{
+			//throw new SimError("no message for id " +id + " to remove at " + this.host);
+		}
+		else
+		{
+			for (MessageListener ml : this.mListeners) {
+				ml.messageDeleted(removed, this.host, drop);
+			}
 		}
 	}
 	

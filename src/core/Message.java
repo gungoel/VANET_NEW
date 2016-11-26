@@ -58,11 +58,20 @@ public class Message implements Comparable<Message>, Serializable {
 	private int responseSize;
 	/** if this message is a response message, this is set to the request msg*/
 	private Message requestMsg;
-
+	public static boolean isSecure;
 	/** Container for generic message properties. Note that all values
 	 * stored in the properties should be immutable because only a shallow
 	 * copy of the properties is made when replicating messages */
 	private Map<String, Object> properties;
+
+	private boolean flagAuth;
+	public boolean isFlagAuth() {
+		return flagAuth;
+	}
+
+	public void setFlagAuth(boolean flagAuth) {
+		this.flagAuth = flagAuth;
+	}
 
 	/** Application ID of the application that created the message */
 	private String	appID;
@@ -70,6 +79,14 @@ public class Message implements Comparable<Message>, Serializable {
 
 	private String vehicleNum;
 	private String speed;
+
+	public String getSpeed() {
+		return speed;
+	}
+
+	public void setSpeed(String speed) {
+		this.speed = speed;
+	}
 
 	public String getVehicleNum() {
 		return vehicleNum;
@@ -297,6 +314,7 @@ public class Message implements Comparable<Message>, Serializable {
 		this.signature = m.signature;
 		this.vehicleNum = m.vehicleNum;
 		this.speed= m.speed;
+		this.flagAuth = m.flagAuth;
 		if (m.properties != null) {
 			Set<String> keys = m.properties.keySet();
 			for (String key : keys) {
@@ -350,8 +368,7 @@ public class Message implements Comparable<Message>, Serializable {
 			/* lazy creation to prevent performance overhead for classes
 			   that don't use the property feature  */
 			this.properties = new HashMap<String, Object>();
-		}		
-
+		}
 		this.properties.put(key, value);
 	}
 
@@ -399,9 +416,11 @@ public class Message implements Comparable<Message>, Serializable {
 		System.out.println("Vehcile Number before encryption "+this.vehicleNum);
 		//System.out.println("Direction "+m.getFrom().getDirection());
 		//System.out.println("");
-		encryptedM.setVehicleNum(encryptString(this.vehicleNum));
-		encryptedM.speed=encryptString(this.speed);
-
+		if(Message.isSecure)
+		{
+			encryptedM.setVehicleNum(encryptString(this.vehicleNum));
+			encryptedM.speed=encryptString(this.speed);
+		}
 		System.out.println("Vehcile Number after encryption "+this.vehicleNum);
 		//encryptedM.getFrom().setDirection(encryptString(m.getDirection(),m));
 		//decryptedM.getFrom().setPath(decryptString(m.getFrom().getPath()));
@@ -410,48 +429,6 @@ public class Message implements Comparable<Message>, Serializable {
 	}
 
 	public String encryptString(String rawData){
-
-		//Cipher cipher;
-		/*byte[] encrypted = new byte[117];
-		RSATrial rsa=new RSATrial();
-
-		byte[]  encryptedValue = rsa.encrypt(rawData.getBytes());
-		String test = "";
-        for (byte b : encryptedValue)
-        {
-            test += Byte.toString(b);
-        }*/
-		// decrypt
-		/*String encryptedValue="";
-		//System.out.println("Public key finally for receiver "+m.getTo().getName()+":: "+m.getTo().getPublicKey());
-		//System.out.println("Raw data for vehicle number "+rawData);
-		try {
-			cipher = Cipher.getInstance("RSA");
-			cipher.init(Cipher.ENCRYPT_MODE,m.getTo().getPublicKey());
-			System.out.println("Encrypting data"+rawData);
-			encrypted = cipher.doFinal(rawData.getBytes());
-			System.out.println("Encrypting data after getBytes"+ encrypted.toString());
-
-			BASE64Encoder base64 = new BASE64Encoder();
-			encryptedValue = base64.encode(encrypted);
-
-
-		} catch (NoSuchAlgorithmException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (NoSuchPaddingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IllegalBlockSizeException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (BadPaddingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (InvalidKeyException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}*/
 
 		byte[] ciphertext=new byte[128];
 		try {
@@ -471,22 +448,17 @@ public class Message implements Comparable<Message>, Serializable {
 
 		}
 		catch (IllegalBlockSizeException | BadPaddingException | UnsupportedEncodingException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		catch (InvalidKeyException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
 		return encodeBASE64(ciphertext);
-
-		//return test;
 	}
+	
 	@SuppressWarnings("restriction")
 	private static String encodeBASE64(byte[] bytes)
 	{
@@ -506,52 +478,6 @@ public class Message implements Comparable<Message>, Serializable {
 	}
 
 	public String decryptString(String encryptedData){
-		//byte[] data = new BASE64Decoder().decodeBuffer(encryptedData);
-		/*Cipher rsaCipher;
-
-
-		byte[] plainData = new byte[128];
-		// String decryptedValue=null;
-		byte[] decrypted = rsa.decrypt(encryptedData.getBytes());*/
-
-		/*   String test = "";
-        for (byte b : decrypted)
-        {
-            test += Byte.toString(b);
-        }*/
-		// return test;
-
-		/*  if(m.getTo().getPrivateKey().equals(this.getPrivateKey()))
-        	{System.out.println("Node id is::::::::::::::::: "+m.getFrom().getName());
-        	System.out.println("Node id of to node:::::::::"+m.getTo().getName());
-        	}*/
-		/*  
-		try {
-			//System.out.println("Private key of receiver node  "+m.getTo().getName()+": "+m.getTo().getPrivateKey());
-			rsaCipher = Cipher.getInstance("RSA");
-			rsaCipher.init(Cipher.DECRYPT_MODE, m.getTo().getPrivateKey());
-			System.out.println("Encrypted data in DTN host while decrption "+ encryptedData);
-			// String charSet="UTF-8";
-		    plainData = rsaCipher.doFinal(encryptedData.getBytes());
-		    BASE64Encoder base64 = new BASE64Encoder();
-		     decryptedValue = base64.encode(plainData);
-		    System.out.println(plainData);
-		} catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (InvalidKeyException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IllegalBlockSizeException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (BadPaddingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} */
-
-		// return new String(plainData);
-		//return new String(decrypted);
 
 		PrivateKey key = to.getPrivateKey();
 		Cipher cipher;
@@ -560,24 +486,18 @@ public class Message implements Comparable<Message>, Serializable {
 		try {
 			cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
 			cipher.init(Cipher.DECRYPT_MODE, key);
-
 			plaintext = cipher.doFinal(decodeBASE64(encryptedData));
 			data= new String(plaintext, "UTF8");
 			System.out.println("data aftre decrypion :" +data);
 		} catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (InvalidKeyException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IllegalBlockSizeException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (BadPaddingException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return data;
@@ -593,7 +513,7 @@ public class Message implements Comparable<Message>, Serializable {
 	}
 
 	public void setSignature() {
-		String fullMessage = getVehicleNum();
+		String fullMessage = getVehicleNum()+" "+this.speed;
 		try {
 			Signature sign = Signature.getInstance("SHA1withRSA");
 			sign.initSign(from.getPrivateKey());
@@ -610,7 +530,7 @@ public class Message implements Comparable<Message>, Serializable {
 	
 	public boolean verifySignature(){
 		boolean f = false;
-		String fullMessage = getVehicleNum();		//still un encrypted msg transferred
+		String fullMessage = getVehicleNum()+" "+this.speed;                //digital signature calculated using whole msg
 		try {
 			Signature sign = Signature.getInstance("SHA1withRSA");
 			sign.initVerify(from.getPublicKey());

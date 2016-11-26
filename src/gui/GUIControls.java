@@ -5,16 +5,17 @@
 package gui;
 
 import gui.playfield.PlayField;
+import input.MessageCreateEvent;
 
 import java.awt.FlowLayout;
 import java.awt.Graphics2D;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import javax.swing.event.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.util.List;
 
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
@@ -27,8 +28,12 @@ import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.SpinnerNumberModel;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
+import routing.MessageRouter;
 import core.Coord;
+import core.Message;
 import core.SimClock;
 
 /**
@@ -70,8 +75,15 @@ public class GUIControls extends JPanel implements ActionListener, ChangeListene
 	private boolean isFfw;
 	private int oldSpeedIndex; // what speed was selected before FFW
 	
+	private JButton readMsgButton;
+	private JButton tamperMsg;
+	private JButton secure;
+	private JButton unsecure;
+	
 	private JButton screenShotButton;
 	private JComboBox guiUpdateChooser;
+	
+	private boolean flagPlayedFirst = false;
 	
 	/** 
 	 * GUI update speeds. Negative values -> how many 1/10 seconds to wait
@@ -119,6 +131,14 @@ public class GUIControls extends JPanel implements ActionListener, ChangeListene
 	 */
 	private void initPanel() {
 		this.setLayout(new FlowLayout());
+		this.secure = new JButton("Secure mode");
+		this.secure.addActionListener(this);
+		this.add(this.secure);
+		
+		this.unsecure = new JButton("Non secure mode");
+		this.unsecure.addActionListener(this);
+		this.add(this.unsecure);
+		
 		this.simTimeField = new JTextField("0.0");
 		this.simTimeField.setColumns(6);
 		this.simTimeField.setEditable(false);
@@ -165,6 +185,11 @@ public class GUIControls extends JPanel implements ActionListener, ChangeListene
 		guiUpdateChooser.addActionListener(this);
 		zoomSelector.addChangeListener(this);
 		this.screenShotButton.addActionListener(this);
+		
+		this.playButton.setEnabled(false);
+		this.stepButton.setEnabled(false);
+		this.ffwButton.setEnabled(false);
+		this.playUntilButton.setEnabled(false);
 	}
 	
 	
@@ -302,8 +327,41 @@ public class GUIControls extends JPanel implements ActionListener, ChangeListene
 	
 	
 	public void actionPerformed(ActionEvent e) {
+		
+		if(e.getSource() == this.secure)
+		{
+			Message.isSecure = true;
+			this.remove(this.secure);
+			this.remove(this.unsecure);
+			this.playButton.setEnabled(true);
+			this.stepButton.setEnabled(true);
+			this.ffwButton.setEnabled(true);
+			this.playUntilButton.setEnabled(true);
+		}
+		if(e.getSource() == this.unsecure)
+		{
+			Message.isSecure = false;
+			this.remove(this.secure);
+			this.remove(this.unsecure);
+			this.playButton.setEnabled(true);
+			this.stepButton.setEnabled(true);
+			this.ffwButton.setEnabled(true);
+			this.playUntilButton.setEnabled(true);
+		}
+		
 		if (e.getSource() == this.playButton) {
 			setPaused(!this.paused); // switch pause/play
+			if(flagPlayedFirst==false)
+			{
+				this.readMsgButton = new JButton("Read message");
+				this.readMsgButton.addActionListener(this);
+				this.add(this.readMsgButton);
+				
+				this.tamperMsg = new JButton("Tamper message");
+				this.tamperMsg.addActionListener(this);
+				this.add(this.tamperMsg);
+				flagPlayedFirst = true;
+			}
 		}
 		else if (e.getSource() == this.stepButton) {
 			setPaused(true);
@@ -320,6 +378,28 @@ public class GUIControls extends JPanel implements ActionListener, ChangeListene
 		}
 		else if (e.getSource() == this.screenShotButton) {
 			takeScreenShot();
+		}
+		else if(e.getSource() == this.readMsgButton){
+			setPaused(true);
+			String m = "Message ID : "+MessageRouter.currentMessage.getId()+"\nVehicle Number : "+MessageRouter.currentMessage.getVehicleNum()+" \nSpeed : "+MessageRouter.currentMessage.getSpeed();
+			JOptionPane.showMessageDialog(gui.getParentFrame(), m,"Message details", JOptionPane.INFORMATION_MESSAGE);
+			setPaused(false);
+		}
+		else if(e.getSource() == this.tamperMsg)
+		{
+			setPaused(true);
+			List<Message> listMsg = MessageCreateEvent.messagesCreated;
+			if(listMsg.size()>0)
+			{
+				//MessageCreateEvent.messagesCreated.size()-1
+				Message msg = MessageCreateEvent.messagesCreated.get(3);
+				String m = "Message ID : "+msg.getId()+"\nVehicle Number : "+msg.getVehicleNum()+" \nSpeed : "+msg.getSpeed();
+				JOptionPane.showMessageDialog(gui.getParentFrame(), m,"Original Message", JOptionPane.INFORMATION_MESSAGE);
+				msg.setVehicleNum("Hacked");
+				m = "Message ID : "+msg.getId()+"\nVehicle Number : "+msg.getVehicleNum()+" \nSpeed : "+msg.getSpeed();
+				JOptionPane.showMessageDialog(gui.getParentFrame(), m,"Message tampered and changed", JOptionPane.INFORMATION_MESSAGE);
+			}			
+			setPaused(false);
 		}
 	}
 	

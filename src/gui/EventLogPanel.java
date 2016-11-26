@@ -264,6 +264,18 @@ public class EventLogPanel extends JPanel
 		}
 		else {
 			processEvent(msgDropCheck, "Message dropped", where, null, m);
+			if(Message.isSecure)
+			{
+				if(!m.isFlagAuth())
+				{
+					processEvent(msgDropCheck,"Sender not authenticated, hence message dropped", where,null,m);
+					//processEvent(msgRelayCheck,m.verifySignature()+"", where,null,m);
+				}
+				else
+				{
+					processEvent(msgDropCheck,"Sender authenticated and Message stored in buffer", where,null,m);
+				}
+			}
 		}
 	}
 
@@ -271,28 +283,27 @@ public class EventLogPanel extends JPanel
 			boolean firstDelivery) {
 		if (firstDelivery) {
 			processEvent(msgDeliveredCheck, "Message delivered.Path taken : "+m.getHops()+" Last transfered from : ", from, to, m); 
-			processEvent(msgDeliveredCheck,"Message decrypted", from, to, m);
+			if(Message.isSecure)
+			{
+				processEvent(msgDeliveredCheck,"Message decrypted", from, to, m);
+			}
 		}
 		else if (to == m.getTo()) {
 			processEvent(msgDeliveredCheck, "Message delivered again .Path taken : "+m.getHops()+" Last transfered from : ",from, to, m);
-			processEvent(msgDeliveredCheck, "Message decrypted",from, to, m);
+			if(Message.isSecure)
+			{
+				processEvent(msgDeliveredCheck, "Message decrypted",from, to, m);
+			}
 		}
 		else {
 			processEvent(msgRelayCheck, "Message received by node", from, to, m);
-			if(!MessageRouter.flagAuth)
-			{
-				processEvent(msgRelayCheck,"Sender not authenticated, hence message dropped", from,to,m);
-			}
-			else
-			{
-				processEvent(msgRelayCheck,"Sender authenticated and Message stored in buffer", from,to,m);
-			}
 		}
 	}
 
 	public void newMessage(Message m) {
 		processEvent(msgCreateCheck, "Message created", m.getFrom(), null, m);
-		processEvent(msgCreateCheck, "Message has been encrypted", m.getFrom(), null, m);
+		if(Message.isSecure)
+			processEvent(msgCreateCheck, "Message has been encrypted", m.getFrom(), null, m);
 	}
 	
 	public void messageTransferAborted(Message m, DTNHost from, DTNHost to) {

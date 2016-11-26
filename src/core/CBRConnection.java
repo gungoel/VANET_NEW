@@ -52,6 +52,7 @@ public class CBRConnection extends Connection {
 		this.msgFromNode = from;
 		Message newMessage = m.replicate();
 		int retVal = getOtherNode(from).receiveMessage(newMessage, from);
+		m= newMessage.replicate();
 		//System.out.println("IN CBR connection start "+newMessage.getVehicleNum());
 		if (retVal == MessageRouter.RCV_OK) {
 			this.msgOnFly = newMessage;

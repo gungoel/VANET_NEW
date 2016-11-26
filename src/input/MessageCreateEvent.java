@@ -10,6 +10,8 @@ import java.io.FileOutputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.crypto.Cipher;
 import javax.crypto.CipherOutputStream;
@@ -26,7 +28,7 @@ import core.World;
 public class MessageCreateEvent extends MessageEvent {
 	private int size;
 	private int responseSize;
-
+	public static List<Message> messagesCreated = new ArrayList<Message>();
 	/**
 	 * Creates a message creation event with a optional response request
 	 * @param from The creator of the message
@@ -50,29 +52,28 @@ public class MessageCreateEvent extends MessageEvent {
 	 */
 	@Override
 	public void processEvent(World world) {
-
 		DTNHost to = world.getNodeByAddress(this.toAddr);
 		DTNHost from = world.getNodeByAddress(this.fromAddr);
 		Message m = new Message(from, to, this.id, this.size);
-		
        // m.setVehicleNum(from.getVehicleNum());
 		m.setResponseSize(this.responseSize);
-		
-		
-			//System.out.println("from node"+ m.getVehicleNum());
-			//System.out.println("to node "+ to);
+		//System.out.println("from node"+ m.getVehicleNum());
+		//System.out.println("to node "+ to);
+		Message encryptedM = m;
+		if(Message.isSecure)
+		{
+			encryptedM=m.encryptMessage();
+			encryptedM.setSignature();
+			encryptedM.setFlagAuth(true);
+		}
+		//m=encryptedM;
+		//System.out.println("Finalllllyyyy u shud be the one");
+		//System.out.println("DTN host speed "+ from.getSpeed()+"destination is "+ from.getDestination());
 
-		Message encryptedM=m.encryptMessage();
-		encryptedM.setSignature();
-			//m=encryptedM;
-			//System.out.println("Finalllllyyyy u shud be the one");
-			//System.out.println("DTN host speed "+ from.getSpeed()+"destination is "+ from.getDestination());
-
-		System.out.println("");
 		//System.out.println("details of to host"+ to.getAddress()+" Name "+to.getName());
 		//System.out.println("details of from host "+ from.getAddress()+"name "+from.getName());
-		System.out.println("Encrypted Message :  "+ encryptedM.getVehicleNum()+"id : "+ encryptedM.getId());
-	
+		messagesCreated.add(encryptedM);
+		System.out.println("\nEncrypted Message :  "+ encryptedM.getVehicleNum()+"id : "+ encryptedM.getId());	
 		from.createNewMessage(encryptedM);
 		System.out.println("**************************************************************");
 		

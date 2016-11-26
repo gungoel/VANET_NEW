@@ -165,6 +165,8 @@ public abstract class ActiveRouter extends MessageRouter {
 		}
 		
 		retVal = con.startTransfer(getHost(), m);
+		if(retVal==-2)
+			m.setFlagAuth(false);
 		if (retVal == RCV_OK) { // started transfer
 			addToSendingConnections(con);
 		}
@@ -172,6 +174,10 @@ public abstract class ActiveRouter extends MessageRouter {
 				m.getTo() == con.getOtherNode(this.getHost())) {
 			/* final recipient has already received the msg -> delete it */
 			this.deleteMessage(m.getId(), false);
+		}
+		else if(retVal == -2)  //Message authentication failed
+		{
+			this.deleteMessage(m.getId(), true);
 		}
 		
 		return retVal;
